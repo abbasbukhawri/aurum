@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  code: MyString
+  discount_type: 1
+  discount_value: 1
+  active: false
+  starts_at: 2025-10-16 14:36:57
+  ends_at: 2025-10-16 14:36:57
+
+two:
+  code: MyString
+  discount_type: 1
+  discount_value: 1
+  active: false
+  starts_at: 2025-10-16 14:36:57
+  ends_at: 2025-10-16 14:36:57

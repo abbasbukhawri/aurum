@@ -1,0 +1,2 @@
+class SpecOption < ApplicationRecord
+end
