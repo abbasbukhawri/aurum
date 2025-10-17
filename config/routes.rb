@@ -16,6 +16,7 @@ Rails.application.routes.draw do
     get "products/update"
     get "products/destroy"
     get "dashboard/index"
+    resources :users
   end
   get "orders/show"
   get "orders/index"
