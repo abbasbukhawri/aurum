@@ -1,4 +1,7 @@
 class Metal < ApplicationRecord
-  # Examples: Gold(24k,22k,18k), Silver(925=~22k?), Brass/Alloy for artificial
+  has_many :products
+
   validates :name, presence: true
+  validates :purity_karat,
+            numericality: { greater_than: 0, allow_nil: true }
 end

@@ -3,7 +3,6 @@ class OrderSerializer < ActiveModel::Serializer
              :number,
              :status,
              :payment_status,
-             :shipping_status,
              :subtotal_cents,
              :shipping_cents,
              :tax_cents,

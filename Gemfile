@@ -46,7 +46,7 @@ gem "thruster", require: false
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
-  gem 'active_model_serializers', '~> 0.10.13'
+  # gem 'active_model_serializers', '~> 0.10.13'
 
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
@@ -67,6 +67,7 @@ group :test do
 end
 gem 'devise'                     # authentication
 gem 'pundit'                     # authorization
+gem "pry-rails"
 gem 'friendly_id', '~> 5.5'      # SEO slugs
 gem 'pagy'                       # pagination
 gem 'ransack'                    # filtering/search

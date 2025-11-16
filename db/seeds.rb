@@ -1,53 +1,79 @@
-# db/seeds.rb
 puts "🌱 Seeding database..."
 
 # -----------------------
 # METALS
 # -----------------------
-gold   = Metal.find_or_create_by!(name: 'Gold',   purity_karat: 22)
-silver = Metal.find_or_create_by!(name: 'Silver', purity_karat: 0)
-alloy  = Metal.find_or_create_by!(name: 'Alloy',  purity_karat: 0) # artificial base
+gold   = Metal.find_or_initialize_by(name: 'Gold')
+gold.purity_karat = 22
+gold.save!
+
+silver = Metal.find_or_initialize_by(name: 'Silver')
+silver.purity_karat = 0
+silver.save!
+
+alloy = Metal.find_or_initialize_by(name: 'Alloy')
+alloy.purity_karat = 0
+alloy.save!
 
 puts "✅ Metals seeded: #{Metal.count}"
 
 # -----------------------
 # CATEGORIES
 # -----------------------
-rings = Category.find_or_create_by!(name: 'Rings')
-neck  = Category.find_or_create_by!(name: 'Necklaces')
+rings = Category.find_or_initialize_by(name: 'Rings')
+rings.save!
+
+necklaces = Category.find_or_initialize_by(name: 'Necklaces')
+necklaces.save!
 
 puts "✅ Categories seeded: #{Category.count}"
 
 # -----------------------
 # GEMSTONES
 # -----------------------
-emerald = Gemstone.find_or_create_by!(name: 'Emerald') do |g|
-  g.kind  = :natural
-  g.color = 'green'
-end
+emerald = Gemstone.find_or_initialize_by(name: 'Emerald')
+emerald.kind = 'natural'
+emerald.color = 'green'
+emerald.save!
 
-ruby_gem = Gemstone.find_or_create_by!(name: 'Ruby') do |g|
-  g.kind  = :lab_created
-  g.color = 'red'
-end
+ruby_gem = Gemstone.find_or_initialize_by(name: 'Ruby')
+ruby_gem.kind = 'lab_created'
+ruby_gem.color = 'red'
+ruby_gem.save!
 
 puts "✅ Gemstones seeded: #{Gemstone.count}"
 
 # -----------------------
 # PRODUCTS
 # -----------------------
-p1 = Product.find_or_create_by!(sku: 'RING-GLD-0001') do |p|
-  p.name             = 'Classic Gold Ring'
-  p.category         = rings
-  p.metal            = gold
-  p.description      = '22k gold ring'
-  p.weight_grams     = 5.2
-  p.base_price_cents = 120_000
-  p.currency         = 'USD'
-  p.visible          = true
-end
+ring1 = Ring.find_or_initialize_by(sku: 'RING-GLD-0001')
+ring1.assign_attributes(
+  name: 'Classic Gold Ring',
+  category: rings,
+  metal: gold,
+  description: '22k gold ring',
+  weight_grams: 5.2,
+  base_price_cents: 120_000,
+  currency: 'USD',
+  visible: true
+)
+ring1.save!
 
-puts "✅ Product created: #{p1.name}"
+necklace1 = Product.find_or_initialize_by(sku: 'NECK-SLV-0001')
+necklace1.assign_attributes(
+  name: 'Ruby Necklace',
+  type: 'Necklace',
+  category: necklaces,
+  metal: silver,
+  description: 'Beautiful ruby necklace',
+  weight_grams: 15.0,
+  base_price_cents: 200_000,
+  currency: 'USD',
+  visible: true
+)
+necklace1.save!
+
+puts "✅ Products seeded: #{Product.count}"
 
 # -----------------------
 # VARIANTS
@@ -55,41 +81,81 @@ puts "✅ Product created: #{p1.name}"
 [
   { size: '6', price_cents: 120_000, stock: 10 },
   { size: '7', price_cents: 120_000, stock: 8 }
-].each do |variant_attrs|
-  Variant.find_or_create_by!(
-    product: p1,
-    sku: "RING-GLD-0001-#{variant_attrs[:size]}"
-  ) do |v|
-    v.option_values = { size: variant_attrs[:size] }
-    v.price_cents   = variant_attrs[:price_cents]
-    v.stock         = variant_attrs[:stock]
-    v.active        = true
-  end
+].each do |attrs|
+  variant = Variant.find_or_initialize_by(sku: "RING-GLD-0001-#{attrs[:size]}")
+  variant.product = ring1
+  variant.option_values = { size: attrs[:size] }
+  variant.price_cents = attrs[:price_cents]
+  variant.stock = attrs[:stock]
+  variant.active = true
+  variant.save!
 end
+
+variant_neck = Variant.find_or_initialize_by(sku: 'NECK-SLV-0001-18')
+variant_neck.product = necklace1
+variant_neck.option_values = { length: '18inch' }
+variant_neck.price_cents = 200_000
+variant_neck.stock = 5
+variant_neck.active = true
+variant_neck.save!
 
 puts "✅ Variants seeded: #{Variant.count}"
 
 # -----------------------
-# PRODUCT GEMSTONES
+# USERS
 # -----------------------
-ProductGemstone.find_or_create_by!(product: p1, gemstone: emerald) do |pg|
-  pg.carat_weight = 0.5
+admin = User.find_or_initialize_by(email: 'admin@example.com')
+admin.assign_attributes(
+  password: 'Password1!',
+  password_confirmation: 'Password1!',
+  role: 'admin',
+  first_name: 'Store',
+  last_name: 'Admin',
+  confirmed_at: Time.current
+)
+admin.save!
+
+customer1 = User.find_or_initialize_by(email: 'john@example.com')
+customer1.assign_attributes(
+  password: 'Password1!',
+  password_confirmation: 'Password1!',
+  role: 'customer',
+  first_name: 'John',
+  last_name: 'Doe',
+  confirmed_at: Time.current
+)
+customer1.save!
+
+customer2 = User.find_or_initialize_by(email: 'jane@example.com')
+customer2.assign_attributes(
+  password: 'Password1!',
+  password_confirmation: 'Password1!',
+  role: 'customer',
+  first_name: 'Jane',
+  last_name: 'Smith',
+  confirmed_at: Time.current
+)
+customer2.save!
+
+puts "✅ Users seeded: #{User.count}"
+
+# -----------------------
+# CARTS & CART ITEMS
+# -----------------------
+cart1 = Cart.find_or_initialize_by(user: customer1, status: '0')
+cart1.save!
+CartItem.find_or_initialize_by(cart: cart1, variant: Variant.find_by(sku: 'RING-GLD-0001-6')).tap do |ci|
+  ci.quantity = 2
+  ci.save!
 end
 
-puts "✅ ProductGemstones seeded: #{ProductGemstone.count}"
-
-# -----------------------
-# ADMIN USER
-# -----------------------
-User.find_or_create_by!(email: 'admin@example.com') do |u|
-  u.password              = 'Password1!'
-  u.password_confirmation = 'Password1!'
-  u.role                  = :admin
-  u.first_name            = 'Store'
-  u.last_name             = 'Admin'
-  u.confirmed_at          = Time.current
+cart2 = Cart.find_or_initialize_by(user: customer2, status: '0')
+cart2.save!
+CartItem.find_or_initialize_by(cart: cart2, variant: Variant.find_by(sku: 'NECK-SLV-0001-18')).tap do |ci|
+  ci.quantity = 1
+  ci.save!
 end
 
-puts "✅ Admin user created: admin@example.com / Password1!"
+puts "✅ Carts & CartItems seeded: #{Cart.count} / #{CartItem.count}"
 
-puts "🎉 Seeding complete."
+puts "🎉 Seeding complete!"

@@ -1,45 +1,89 @@
 Rails.application.routes.draw do
-  namespace :admin do
-    get "orders/index"
-    get "orders/show"
-    get "orders/update"
-    get "categories/index"
-    get "categories/new"
-    get "categories/create"
-    get "categories/edit"
-    get "categories/update"
-    get "categories/destroy"
-    get "products/index"
-    get "products/new"
-    get "products/create"
-    get "products/edit"
-    get "products/update"
-    get "products/destroy"
-    get "dashboard/index"
-    resources :users
-  end
-  get "orders/show"
-  get "orders/index"
-  get "checkout/addresses"
-  get "checkout/payment"
-  get "checkout/confirm"
-  get "cart_items/create"
-  get "cart_items/update"
-  get "cart_items/destroy"
-  get "carts/show"
-  get "catalog/index"
-  get "catalog/show"
+  # ======================
+  # 🔐 Devise Authentication
+  # ======================
   devise_for :users
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # ======================
+  # 🧭 Admin Namespace
+  # ======================
+  namespace :admin do
+    # Dashboard
+    get "dashboard", to: "dashboard#index"
+
+    # Admin management resources
+    resources :users
+    resources :categories
+    resources :products
+
+    # Orders (admin can see all + manage)
+    resources :orders, only: [:index, :show, :update, :destroy]
+  end
+
+  # ======================
+  # 🛍️ Storefront Routes (API)
+  # ======================
+
+  post   "login",  to: "auth#login"
+  delete "logout", to: "auth#logout"
+  get    "me",     to: "auth#me"
+  # Public product catalog (uses ProductsController with STI filter ?type=ring)
+  resources :products, only: [:index, :show]
+  get "/search/suggestions", to: "products#suggestions"
+  get "/search/popular", to: "products#popular"
+
+  # Cart (guest + user)
+  # CartsController: index, show, create (add to cart), update, destroy, current_cart
+  resources :carts, only: [:index, :show, :create, :update, :destroy]
+  get "/cart", to: "carts#current"  # returns current cart for guest/user
+
+  # Cart items (if you have a CartItemsController; if not, you can remove this)
+  resources :cart_items, only: [:create, :update, :destroy]
+
+  # Orders (client-facing)
+  # OrdersController: index, show, create, update, verify_otp
+  resources :orders, only: [:index, :show, :create, :update] do
+    post "verify_otp", on: :member
+  end
+
+  resource :wishlist, only: [:show] do
+    post   :add_item
+    delete "remove_item/:variant_id", action: :remove_item, as: :remove_item
+  end
+
+  # ======================
+  # (Optional) Checkout Wizard Pages
+  # ======================
+  # Only keep this if you actually have `Checkout::AddressesController`, etc.
+  namespace :checkout do
+    get "addresses"
+    get "payment"
+    get "confirm"
+  end
+
+  # ======================
+  # 💎 Product Types (STI)
+  # ======================
+  # You **do not need** separate resources for rings/necklaces/etc.
+  # You can filter by /products?type=ring using ProductsController.
+  #
+  # Remove these unless you actually have RingsController, BraceletsController...
+  #
+  # resources :rings
+  # resources :bracelets
+  # resources :necklaces
+  # resources :earrings
+  # resources :watches
+  # resources :accessories
+
+  # ======================
+  # 🩺 Health check
+  # ======================
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
-  # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
-  # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # ======================
+  # 🏠 Root Route
+  # ======================
+  # Use ProductsController#index as main catalog page
+  root "products#index"
 end

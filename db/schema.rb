@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_162053) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "btree_gin"
   enable_extension "pg_catalog.plpgsql"
@@ -46,7 +46,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
 
   create_table "addresses", force: :cascade do |t|
     t.bigint "user_id"
-    t.integer "kind", default: 0, null: false
     t.string "full_name"
     t.string "phone"
     t.string "line1"
@@ -57,7 +56,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.string "country"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["kind"], name: "index_addresses_on_kind"
+    t.string "kind", default: "billing"
     t.index ["user_id"], name: "index_addresses_on_user_id"
   end
 
@@ -73,7 +72,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
 
   create_table "carts", force: :cascade do |t|
     t.bigint "user_id"
-    t.integer "status", default: 0, null: false
+    t.string "status", default: "0", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["status"], name: "index_carts_on_status"
@@ -107,7 +106,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
 
   create_table "gemstones", force: :cascade do |t|
     t.string "name", null: false
-    t.integer "kind", default: 0, null: false
+    t.string "kind", default: "natural", null: false
     t.string "color"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -141,9 +140,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.bigint "user_id"
     t.bigint "cart_id"
     t.string "number"
-    t.integer "status", default: 0, null: false
-    t.integer "payment_status", default: 0, null: false
-    t.integer "shipping_status", default: 0, null: false
+    t.string "status", default: "pending", null: false
+    t.string "payment_status", default: "unpaid", null: false
     t.integer "subtotal_cents", default: 0, null: false
     t.integer "shipping_cents", default: 0, null: false
     t.integer "tax_cents", default: 0, null: false
@@ -154,6 +152,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.bigint "shipping_address_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "guest_first_name"
+    t.string "guest_last_name"
+    t.string "guest_email"
+    t.string "guest_phone"
+    t.string "otp_code"
+    t.datetime "otp_sent_at"
+    t.boolean "otp_verified"
     t.index ["billing_address_id"], name: "index_orders_on_billing_address_id"
     t.index ["cart_id"], name: "index_orders_on_cart_id"
     t.index ["number"], name: "index_orders_on_number", unique: true
@@ -194,11 +199,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.boolean "visible", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "type"
     t.index ["category_id"], name: "index_products_on_category_id"
     t.index ["currency"], name: "index_products_on_currency"
     t.index ["metal_id"], name: "index_products_on_metal_id"
     t.index ["sku"], name: "index_products_on_sku"
     t.index ["slug"], name: "index_products_on_slug"
+    t.index ["type"], name: "index_products_on_type"
     t.index ["visible"], name: "index_products_on_visible"
   end
 
@@ -214,7 +221,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.string "first_name"
     t.string "last_name"
     t.string "phone"
-    t.integer "role", default: 0, null: false
+    t.string "role", default: "0", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
@@ -231,6 +238,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.string "unconfirmed_email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "auth_token"
+    t.index ["auth_token"], name: "index_users_on_auth_token", unique: true
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
@@ -249,6 +258,26 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_16_095532) do
     t.index ["option_values"], name: "index_variants_on_option_values", using: :gin
     t.index ["product_id"], name: "index_variants_on_product_id"
     t.index ["sku"], name: "index_variants_on_sku", unique: true
+  end
+
+  create_table "wishlist_items", force: :cascade do |t|
+    t.bigint "wishlist_id", null: false
+    t.bigint "variant_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["variant_id"], name: "index_wishlist_items_on_variant_id"
+    t.index ["wishlist_id", "variant_id"], name: "index_wishlist_items_on_wishlist_id_and_variant_id", unique: true
+    t.index ["wishlist_id"], name: "index_wishlist_items_on_wishlist_id"
+  end
+
+  create_table "wishlists", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "session_token"
+    t.string "status", default: "active", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["session_token"], name: "index_wishlists_on_session_token"
+    t.index ["user_id"], name: "index_wishlists_on_user_id"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

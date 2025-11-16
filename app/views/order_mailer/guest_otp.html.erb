@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>Verify your order</h1>
+
+    <p>Hi <%= @order.guest_first_name || "there" %>,</p>
+
+    <p>Your verification code for order <strong><%= @order.number %></strong> is:</p>
+
+    <p style="font-size: 24px; font-weight: bold;">
+      <%= @order.otp_code %>
+    </p>
+
+    <p>This code will expire in 10 minutes.</p>
+
+    <p>Thank you for shopping with us.</p>
+  </body>
+</html>

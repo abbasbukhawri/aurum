@@ -1,62 +1,32 @@
-# == Schema Information
-#
-# Table name: orders
-#
-#  id                   :bigint           not null, primary key
-#  user_id              :bigint
-#  cart_id              :bigint
-#  number               :string
-#  status               :integer          default(0), not null
-#  payment_status       :integer          default(0), not null
-#  shipping_status      :integer          default(0), not null
-#  subtotal_cents       :integer          default(0), not null
-#  shipping_cents       :integer          default(0), not null
-#  tax_cents            :integer          default(0), not null
-#  discount_cents       :integer          default(0), not null
-#  total_cents          :integer          default(0), not null
-#  currency             :string
-#  billing_address_id   :bigint
-#  shipping_address_id  :bigint
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#
 class Order < ApplicationRecord
-  enum :status, {
-    draft: 0,
-    placed: 1,
-    paid: 2,
-    shipped: 3,
-    completed: 4,
-    canceled: 5
-  }, prefix: true
-
-  enum :payment_status, {
-    pending: 0,
-    authorized: 1,
-    captured: 2,
-    failed: 3,
-    refunded: 4
-  }, prefix: true
-
-  enum :shipping_status, {
-    not_required: 0,
-    pending: 1,
-    in_transit: 2,
-    delivered: 3
-  }, prefix: true
-
-  belongs_to :user, optional: true
-  belongs_to :cart, optional: true
-  belongs_to :billing_address, class_name: "Address", optional: true
+  belongs_to :user,             optional: true
+  belongs_to :cart,             optional: true
+  belongs_to :billing_address,  class_name: "Address", optional: true
   belongs_to :shipping_address, class_name: "Address", optional: true
 
   has_many :order_items, dependent: :destroy
+  has_many :variants,    through: :order_items
+  has_many :products,    through: :variants
 
-  before_create :assign_number
+  enum :status,
+    pending:   "pending",
+    confirmed: "confirmed",
+    shipped:   "shipped",
+    delivered: "delivered",
+    cancelled: "cancelled"
+  
 
-  private
+  enum :payment_status,
+    unpaid:   "unpaid",
+    paid:     "paid",
+    refunded: "refunded"
 
-  def assign_number
-    self.number ||= "ORD-#{Time.current.strftime('%Y%m%d')}-#{SecureRandom.hex(4).upcase}"
+
+  def subtotal_cents
+    order_items.sum(:total_cents)
+  end
+
+  def total_cents
+    subtotal_cents + shipping_cents.to_i + tax_cents.to_i - discount_cents.to_i
   end
 end

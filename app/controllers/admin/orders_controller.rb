@@ -1,27 +1,41 @@
 class Admin::OrdersController < ApplicationController
-  before_action :set_order, only: [:show, :update]
+  # before_action :authenticate_admin!
+  before_action :set_order, only: [:show, :update, :destroy]
 
-    def index
+  # GET /admin/orders
+  def index
     @orders = Order.includes(:user, :order_items).order(created_at: :desc)
-
-    render json: {
-      orders: ActiveModelSerializers::SerializableResource.new(@orders, each_serializer: OrderSerializer),
-      meta: { total: @orders.count }
-    }
+    render json: @orders.as_json(
+      include: {
+        user: { only: [:id, :email, :first_name, :last_name] },
+        order_items: { include: { variant: { include: :product } } }
+      }
+    )
   end
 
+  # GET /admin/orders/:id
   def show
-    render json: {
-      order: ActiveModelSerializers::SerializableResource.new(@order, serializer: OrderSerializer)
-    }
+    render json: @order.as_json(
+      include: {
+        user: { only: [:id, :email, :first_name, :last_name] },
+        order_items: { include: { variant: { include: :product } } }
+      }
+    )
   end
 
+  # PATCH /admin/orders/:id
   def update
     if @order.update(order_params)
-      redirect_to admin_order_path(@order), notice: 'Order updated successfully.'
+      render json: { success: true, order: @order }
     else
-      render :show, alert: 'Failed to update order.'
+      render json: { success: false, errors: @order.errors.full_messages }, status: :unprocessable_entity
     end
+  end
+
+  # DELETE /admin/orders/:id
+  def destroy
+    @order.destroy
+    render json: { success: true, message: "Order deleted" }
   end
 
   private
@@ -31,6 +45,12 @@ class Admin::OrdersController < ApplicationController
   end
 
   def order_params
-    params.require(:order).permit(:status, :payment_status, :shipping_status)
+    params.require(:order).permit(:status, :payment_status, :tracking_number, :cancelled_reason)
+  end
+
+  def authenticate_admin!
+    unless current_user&.admin?
+      render json: { error: "Unauthorized" }, status: :forbidden
+    end
   end
 end

@@ -21,7 +21,7 @@ class Admin::UsersController < ApplicationController
     if @user.save
       redirect_to admin_user_path(@user), notice: 'User created successfully.'
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
@@ -34,7 +34,7 @@ class Admin::UsersController < ApplicationController
     if @user.update(user_params)
       redirect_to admin_user_path(@user), notice: 'User updated successfully.'
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 

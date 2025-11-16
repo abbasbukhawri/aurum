@@ -2,13 +2,15 @@ class CartItem < ApplicationRecord
   belongs_to :cart
   belongs_to :variant
 
+  delegate :product, to: :variant
+
   validates :quantity, numericality: { greater_than: 0 }
 
-  def unit_price_cents
-    variant.price
+  def price_cents
+    variant.price_cents_effective
   end
 
-  def line_total_cents
-    unit_price_cents * quantity
+  def total_cents
+    price_cents * quantity
   end
 end

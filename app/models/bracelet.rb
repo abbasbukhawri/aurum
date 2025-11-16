@@ -1,0 +1,2 @@
+class Bracelet < Product
+end

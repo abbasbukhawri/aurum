@@ -1,9 +1,17 @@
 class Cart < ApplicationRecord
-  enum :status, { active: 0, converted: 1, abandoned: 2 }, prefix: true
   belongs_to :user, optional: true
   has_many :cart_items, dependent: :destroy
+  has_many :variants, through: :cart_items
+  has_many :products, through: :variants
+  scope :converted, -> { where(status: 'converted') }
 
-  def subtotal_cents
-    cart_items.sum(&:line_total_cents)
+  enum :status, 
+    active: "active",
+    converted: "converted",
+    abandoned: "abandoned",
+    pending:   "pending"
+
+  def total_cents
+    cart_items.includes(:variant).sum { |item| item.total_cents }
   end
 end

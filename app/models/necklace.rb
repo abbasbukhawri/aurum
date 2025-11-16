@@ -1,0 +1,2 @@
+class Necklace < Product
+end

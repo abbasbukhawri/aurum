@@ -1,28 +1,53 @@
 class CartItemsController < ApplicationController
+  # before_action :authenticate_user!
+  skip_before_action :verify_authenticity_token
   before_action :set_cart
 
-  def create
+  # POST /cart_items
+   def create
     variant = Variant.find(params[:variant_id])
-    item = @cart.cart_items.find_or_initialize_by(variant:)
-    item.quantity = item.quantity.to_i + params[:quantity].to_i
-    if item.save
-      redirect_to cart_path, notice: 'Added to cart.'
+    quantity = params[:quantity].to_i > 0 ? params[:quantity].to_i : 1
+
+    # Find or initialize cart_item
+    cart_item = @cart.cart_items.find_or_initialize_by(variant_id: variant.id)
+    cart_item.quantity += quantity
+
+    if cart_item.save
+      render json: { 
+        success: true, 
+        message: "#{variant.product.name} added to cart", 
+        cart_item: cart_item 
+      }, status: :ok
     else
-      redirect_back fallback_location: root_path, alert: item.errors.full_messages.to_sentence
+      render json: { success: false, errors: cart_item.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
+  # PATCH /cart_items/:id
   def update
-    item = @cart.cart_items.find(params[:id])
-    item.update(quantity: params[:quantity])
-    redirect_to cart_path
+    cart_item = @cart.cart_items.find(params[:id])
+    if cart_item.update(quantity: params[:quantity])
+      render json: { success: true, cart_item: cart_item }
+    else
+      render json: { success: false, errors: cart_item.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
+  # DELETE /cart_items/:id
   def destroy
-    @cart.cart_items.find(params[:id]).destroy
-    redirect_to cart_path
+    cart_item = @cart.cart_items.find(params[:id])
+    cart_item.destroy
+    render json: { success: true, message: "Item removed from cart" }, status: :ok
   end
 
   private
-  def set_cart; @cart = Cart.find(session[:cart_id]); end
+
+  def set_cart
+    @cart = if current_user
+              current_user.carts.find_or_create_by(status: "active")
+            else
+              session[:cart_id] ||= Cart.create!(status: "active").id
+              Cart.find(session[:cart_id])
+            end
+  end
 end
